@@ -1,0 +1,94 @@
+/* voucher do inquérito (/inquerito/): os 2 primeiros meses da Clara Elite oferecidos a quem acaba o inquérito.
+   Pedro, 01/11 (2 meses em vez de 1, no mesmo dia): um por pessoa (por email), uso único, ativa-se entre 1 e 31 de dezembro de 2026, não se junta à
+   pré-reserva de 27 €; quem continuar na Pro ou na Elite tem 50% na primeira mensalidade desse plano.
+   O email sai pelo GHL (Conversations API), a partir de pedro.ferreira@numerocinco.pt, com o voucher e o plano.
+   O GHL_TOKEN precisa da permissão de enviar mensagens (conversations/message.write) e o numerocinco.pt tem de estar
+   como domínio de envio no GHL. */
+import { createHash } from 'node:crypto'
+import { API } from './ghl.js'
+import { planoDoConsultor } from '../js/inquerito.js'
+
+export const REMETENTE = 'pedro.ferreira@numerocinco.pt'
+export const CONDICOES = [
+  'O voucher dá os 2 primeiros meses da Clara Elite completa, sem pagar.',
+  'É um por pessoa e só se usa uma vez.',
+  'Ativa-se entre 1 e 31 de dezembro de 2026.',
+  'Não se junta à pré-reserva de 27 €.',
+  'Se continuares na Clara Pro ou na Clara Elite, a primeira mensalidade desse plano tem 50% de desconto. Sem fidelização.',
+]
+
+/* o mesmo email dá sempre o mesmo código: quem responde duas vezes recebe o mesmo voucher, não um segundo.
+   Sem letras que se confundem (I, O, 0, 1), como os códigos do Passa a Clara */
+const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+export function codigoVoucher(email) {
+  const h = createHash('sha256').update(`n5-clara-inquerito:${String(email || '').trim().toLowerCase()}`).digest()
+  return `ELITE-${[...h.subarray(0, 6)].map(b => LETRAS[b % LETRAS.length]).join('')}`
+}
+
+const escapar = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+const primeiroNome = nome => String(nome || '').trim().split(/\s+/)[0].slice(0, 40)
+
+/* o email em HTML simples, com estilos na linha, para abrir bem no Gmail e no Outlook.
+   O texto livre do inquérito não entra no email: só as escolhas, para o formulário não servir para mandar texto a outros */
+export function emailVoucher({ nome, codigo, respostas, teste = false }) {
+  const p = planoDoConsultor(respostas)
+  const ola = primeiroNome(nome) ? `Olá ${escapar(primeiroNome(nome))},` : 'Olá,'
+  const tinta = '#15181D'
+  const dourado = '#E8A13C'
+  const cinza = '#5B6068'
+  const linha = (titulo, texto, quando) => `
+    <tr><td style="padding:12px 0;border-top:1px solid #E6E3DC">
+      ${quando ? `<div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${dourado}">${escapar(quando)}</div>` : ''}
+      <div style="font-size:16px;font-weight:700;color:${tinta};margin:2px 0 4px">${escapar(titulo)}</div>
+      <div style="font-size:15px;line-height:1.5;color:${cinza}">${escapar(texto)}</div>
+    </td></tr>`
+
+  const html = `<!doctype html><html lang="pt-PT"><body style="margin:0;background:#F5F4F0">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F4F0"><tr><td align="center" style="padding:28px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:18px;font-family:Arial,Helvetica,sans-serif;color:${tinta}">
+<tr><td style="padding:28px 28px 8px">
+  <p style="font-size:16px;line-height:1.5;margin:0 0 14px">${ola}</p>
+  <p style="font-size:16px;line-height:1.5;margin:0 0 14px">Obrigado por responderes ao inquérito da N5 Clara. As tuas respostas ajudam-nos a decidir o que a Clara faz primeiro. Como prometido, aqui tens o teu voucher.</p>
+</td></tr>
+<tr><td style="padding:8px 28px 20px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${tinta};border-radius:14px"><tr><td style="padding:22px 24px;color:#F5F4F0">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${dourado}">O teu voucher</div>
+    <div style="font-size:18px;font-weight:700;margin:6px 0 10px">2 meses da Clara Elite oferecidos</div>
+    <div style="font-family:'Courier New',monospace;font-size:26px;font-weight:700;letter-spacing:.12em;color:${dourado}">${escapar(codigo)}</div>
+    <div style="font-size:14px;line-height:1.5;margin-top:10px;color:#D9D6CE">A Clara abre a 1 de dezembro. Nesse dia enviamos-te a ligação para a ativares com este código.</div>
+  </td></tr></table>
+</td></tr>
+<tr><td style="padding:0 28px 8px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${dourado}">O teu plano</div>
+  <h1 style="font-size:22px;line-height:1.25;margin:6px 0 4px">${escapar(p.titulo)}</h1>
+  <p style="font-size:15px;line-height:1.5;color:${cinza};margin:0 0 6px">Feito com as tuas respostas.</p>
+</td></tr>
+${p.pontos.length ? `<tr><td style="padding:0 28px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${p.pontos.map(x => linha(x.texto, `Hoje: ${x.antes}. Com a Clara: ${x.depois}.`)).join('')}</table></td></tr>` : ''}
+<tr><td style="padding:12px 28px 0"><div style="font-size:17px;font-weight:700">O teu dia com a Clara</div></td></tr>
+<tr><td style="padding:0 28px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${p.dia.map(m => linha(m.titulo, m.texto, m.quando)).join('')}</table></td></tr>
+<tr><td style="padding:12px 28px 0"><div style="font-size:17px;font-weight:700">As tuas primeiras 4 semanas</div></td></tr>
+<tr><td style="padding:0 28px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${p.semanas.map(s => linha(s.titulo, s.texto, `Semana ${s.n}`)).join('')}</table></td></tr>
+${p.pedidos.length ? `<tr><td style="padding:8px 28px"><p style="font-size:15px;line-height:1.5;color:${cinza};margin:0">Também nos disseste que te custa: ${p.pedidos.map(escapar).join('; ').toLowerCase()}. A Clara ainda não faz isto e ficou registado para decidirmos o que desenvolvemos a seguir.</p></td></tr>` : ''}
+<tr><td style="padding:12px 28px 8px"><p style="font-size:15px;line-height:1.5;margin:0"><b>Depois dos 2 meses oferecidos.</b> ${escapar(p.depois)}</p></td></tr>
+<tr><td style="padding:12px 28px 24px">
+  <div style="font-size:13px;font-weight:700;color:${tinta};margin-bottom:6px">Condições do voucher</div>
+  <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.5;color:${cinza}">${CONDICOES.map(c => `<li>${escapar(c)}</li>`).join('')}</ul>
+  <p style="font-size:13px;line-height:1.5;color:${cinza};margin:10px 0 0">Termos completos em <a href="https://clara.numerocinco.pt/termos/#voucher" style="color:${tinta}">clara.numerocinco.pt/termos</a>.</p>
+</td></tr>
+<tr><td style="padding:0 28px 28px"><p style="font-size:15px;line-height:1.5;margin:0">Qualquer dúvida, responde a este email.<br>Pedro Ferreira<br><span style="color:${cinza}">N5 Clara</span></p></td></tr>
+</table></td></tr></table></body></html>`
+
+  return { assunto: `${teste ? '[Teste] ' : ''}O teu voucher: 2 meses da Clara Elite oferecidos`, html }
+}
+
+/* envia o email pelo GHL ao contacto que o inquérito criou ou atualizou */
+export async function enviarEmailVoucher({ contactId, nome, email, respostas, teste = false, token, pedir = fetch }) {
+  const { assunto, html } = emailVoucher({ nome, codigo: codigoVoucher(email), respostas, teste })
+  const resp = await pedir(`${API}/conversations/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, Version: '2021-04-15', 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ type: 'Email', contactId, emailFrom: REMETENTE, subject: assunto, html }),
+  })
+  if (!resp.ok) throw new Error(`GHL /conversations/messages respondeu ${resp.status}`)
+  return { ok: true }
+}

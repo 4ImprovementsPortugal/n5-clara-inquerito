@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 500" width="440" height="500" fill="none">
+  <!-- Janela de código (desenvolvimento) -->
+  <g>
+    <rect x="8" y="30" width="300" height="250" rx="18" fill="#22262D" stroke="#3A3F48"/>
+    <path d="M8 48a18 18 0 0 1 18-18h264a18 18 0 0 1 18 18v22H8z" fill="#2B3038"/>
+    <circle cx="32" cy="50" r="5" fill="#E8A13C"/><circle cx="50" cy="50" r="5" fill="#F5F4F0" opacity=".45"/><circle cx="68" cy="50" r="5" fill="#F5F4F0" opacity=".25"/>
+    <rect x="200" y="44" width="86" height="12" rx="6" fill="#F5F4F0" opacity=".12"/>
+    <!-- números de linha -->
+    <g fill="#F5F4F0" opacity=".28"><rect x="28" y="92" width="8" height="6" rx="3"/><rect x="28" y="116" width="8" height="6" rx="3"/><rect x="28" y="140" width="8" height="6" rx="3"/><rect x="28" y="164" width="8" height="6" rx="3"/><rect x="28" y="188" width="8" height="6" rx="3"/><rect x="28" y="212" width="8" height="6" rx="3"/><rect x="28" y="236" width="8" height="6" rx="3"/></g>
+    <!-- linhas de código -->
+    <rect x="52" y="91" width="64" height="8" rx="4" fill="#E8A13C"/><rect x="124" y="91" width="96" height="8" rx="4" fill="#F5F4F0" opacity=".7"/>
+    <rect x="70" y="115" width="48" height="8" rx="4" fill="#1F9D55"/><rect x="126" y="115" width="110" height="8" rx="4" fill="#F5F4F0" opacity=".45"/>
+    <rect x="70" y="139" width="88" height="8" rx="4" fill="#F5F4F0" opacity=".45"/><rect x="166" y="139" width="56" height="8" rx="4" fill="#E8A13C"/>
+    <rect x="88" y="163" width="70" height="8" rx="4" fill="#1F9D55"/><rect x="166" y="163" width="84" height="8" rx="4" fill="#F5F4F0" opacity=".45"/>
+    <rect x="88" y="187" width="120" height="8" rx="4" fill="#F5F4F0" opacity=".45"/>
+    <rect x="70" y="211" width="40" height="8" rx="4" fill="#E8A13C"/><rect x="118" y="211" width="76" height="8" rx="4" fill="#F5F4F0" opacity=".7"/>
+    <rect x="52" y="235" width="30" height="8" rx="4" fill="#F5F4F0" opacity=".45"/>
+    <rect x="90" y="233" width="3" height="14" rx="1.5" fill="#E8A13C"/>
+  </g>
+
+  <!-- Chaves / engrenagem -->
+  <g transform="translate(330 62)">
+    <circle r="30" fill="#22262D" stroke="#3A3F48"/>
+    <path d="M-6-10-14 0l8 10M6-10l8 10-8 10M3-12-3 12" stroke="#E8A13C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Ligação código → utilizador -->
+  <path d="M200 280c20 50 40 70 80 88" stroke="#E8A13C" stroke-width="2" stroke-dasharray="3 8" stroke-linecap="round"/>
+  <path d="M272 358l12 10-15 4" stroke="#E8A13C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Telemóvel com a Clara (utilizador a usar) -->
+  <g>
+    <rect x="212" y="206" width="206" height="288" rx="34" fill="#F5F4F0" stroke="#15181D" stroke-width="8" transform="rotate(3 315 350)"/>
+    <g transform="rotate(3 315 350)">
+      <rect x="226" y="222" width="178" height="256" rx="24" fill="#FCFBF8"/>
+      <rect x="283" y="230" width="64" height="9" rx="4.5" fill="#15181D"/>
+      <!-- logo Nº5 Clara no topo do telemóvel -->
+      <g transform="translate(240 258) scale(.2)"><g stroke-width="16" stroke-linecap="round" fill="none"><path stroke="#15181D" d="M25 8V102M75 8V102M125 8V102M175 8V102"/><path stroke="#E8A13C" d="M4 88L200 20"/></g></g>
+      <text x="290" y="277" font-family="Archivo, Arial, Helvetica, sans-serif" font-size="17" font-weight="600" letter-spacing="-.6" fill="#15181D">Nº5 <tspan font-weight="700">Clara</tspan></text>
+      <rect x="240" y="296" width="150" height="1" fill="#15181D" opacity=".12"/>
+      <!-- mensagem do consultor -->
+      <rect x="284" y="312" width="108" height="34" rx="14" fill="#15181D"/>
+      <rect x="296" y="324" width="68" height="6" rx="3" fill="#F5F4F0" opacity=".85"/>
+      <!-- resposta da Clara -->
+      <rect x="240" y="356" width="136" height="62" rx="14" fill="#F1EFEB"/>
+      <rect x="252" y="368" width="104" height="6" rx="3" fill="#15181D" opacity=".7"/>
+      <rect x="252" y="382" width="84" height="6" rx="3" fill="#15181D" opacity=".4"/>
+      <rect x="252" y="396" width="60" height="6" rx="3" fill="#E8A13C"/>
+      <!-- caixa de escrita -->
+      <rect x="240" y="438" width="150" height="26" rx="13" fill="#15181D" opacity=".08"/>
+      <circle cx="376" cy="451" r="9" fill="#E8A13C"/>
+    </g>
+    <!-- toque do utilizador -->
+    <g transform="translate(366 418)">
+      <circle r="26" fill="#E8A13C" opacity=".18"/><circle r="15" fill="#E8A13C" opacity=".32"/><circle r="6" fill="#E8A13C"/>
+    </g>
+  </g>
+
+  <!-- brilhos -->
+  <path d="M30 330l4 11 11 4-11 4-4 11-4-11-11-4 11-4z" fill="#E8A13C"/>
+  <path d="M410 150l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#E8A13C"/>
+</svg>
