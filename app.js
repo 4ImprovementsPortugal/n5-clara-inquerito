@@ -109,10 +109,9 @@ function initSurvey() {
     const name = qs('#lead-name'); const email = qs('#lead-email'); const phone = qs('#lead-phone');
     if (!name.value.trim()) { showError('Preciso de um nome para saber como te tratar.'); name.focus(); return; }
     if (!EMAIL.test(email.value.trim())) { showError('Este email não me parece certo. Confirmas?'); email.focus(); return; }
-    if (phone.value.trim()) {
-      const digits = phone.value.replace(/\D/g, '');
-      if (digits.length < 9 || digits.length > 15) { showError('O número tem de ter entre 9 e 15 dígitos.'); phone.focus(); return; }
-    }
+    const digits = phone.value.replace(/\D/g, '');
+    if (!phone.value.trim()) { showError('Preciso do teu número de telemóvel para te contactarmos.'); phone.focus(); return; }
+    if (digits.length < 9 || digits.length > 15) { showError('O número tem de ter entre 9 e 15 dígitos.'); phone.focus(); return; }
 
     if (!qs('#privacy').checked) { showError('Precisamos que confirmes a política de privacidade para concluir.'); qs('#privacy').focus(); return; }
 
