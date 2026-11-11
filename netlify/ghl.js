@@ -32,8 +32,8 @@ export function paraGhl(dados) {
   const p = planoDoConsultor(r)
   const base = {
     contacto: { ...nomeSeparado(dados.nome), email: dados.email, phone: telefone(dados.telefone), source: `Inquérito ${PRODUTO}` },
-    etiquetas: [ETIQUETA, 'inquerito-clara', 'voucher-elite-2-meses', `plano-${p.plano}`, ...daOrigem(dados)],
-    nota: [`Inquérito da ${PRODUTO}.`, `Voucher: ${dados.voucher || 'por gerar'} (2 primeiros meses da Clara Elite, ativar entre 1 e 31/12/2026, um por pessoa, não se junta à pré-reserva).`, `Plano que cobre o que escolheu: ${p.nomePlano}`, '', resumoInquerito(r), ...linhasExtra(dados)].join('\n'),
+    etiquetas: [ETIQUETA, 'inquerito-clara', 'voucher-clara-15-dias', `plano-${p.plano}`, ...daOrigem(dados)],
+    nota: [`Inquérito da ${PRODUTO}.`, `Voucher: ${dados.voucher || 'por gerar'} (15 dias do plano Clara, um por pessoa, não se junta à pré-reserva).`, `Plano que cobre o que escolheu: ${p.nomePlano}`, '', resumoInquerito(r), ...linhasExtra(dados)].join('\n'),
   }
   return { ...base, contacto: sem(base.contacto) }
 }

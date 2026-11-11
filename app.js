@@ -201,13 +201,14 @@ function initThanks() {
   for (const m of p.dia) {
     const li = el('li');
     li.append(el('span', 'when', m.quando), el('b', '', m.titulo), el('span', '', m.texto));
+    if (m.nota) li.append(el('span', 'only-in', m.nota));
     day.append(li);
   }
 
   const weeks = qs('#plan-weeks');
   for (const s of p.semanas) {
     const li = el('li', 'phase');
-    li.append(el('b', '', `SEMANA ${s.n}`), el('strong', '', s.titulo), el('p', '', s.texto));
+    li.append(el('b', '', s.quando.toUpperCase()), el('strong', '', s.titulo), el('p', '', s.texto));
     weeks.append(li);
   }
 

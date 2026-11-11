@@ -1,6 +1,6 @@
 /* inquérito para consultores (/inquerito/): valida a Clara, mostra o que é útil e as dores de cada um e, com as respostas,
-   monta o plano de como a Clara organiza o trabalho do consultor. Quem acaba recebe por email o voucher de 2 meses da
-   Clara Elite (netlify/voucher.js). O plano sai só das respostas: não há médias de ninguém nem horas poupadas inventadas.
+   monta o plano de como a Clara organiza o trabalho do consultor. Quem acaba recebe por email o voucher de 15 dias do
+   plano Clara (netlify/voucher.js). O plano sai só das respostas: não há médias de ninguém nem horas poupadas inventadas.
    O mesmo módulo corre na página e no servidor, para o email ter o mesmo plano que o ecrã. */
 import { PRECOS } from './precos.js'
 
@@ -154,11 +154,12 @@ const TITULO_OBJETIVO = {
   organizar: 'para teres tudo organizado num só sítio',
 }
 
-/* o plano: o que muda no dia, as primeiras 4 semanas e o plano da Clara a seguir aos 2 meses oferecidos */
+/* o plano: o que muda no dia, os primeiros 15 dias e o plano da Clara a seguir aos 15 dias oferecidos */
 export function planoDoConsultor(entrada = {}) {
   const r = limparRespostas(entrada)
   const ids = momentosDe(r)
-  const dia = ids.map(id => ({ id, ...MOMENTOS[id] }))
+  /* o voucher é do plano Clara: o que só existe no Pro ou no Elite vem assinalado */
+  const dia = ids.map(id => ({ id, ...MOMENTOS[id], nota: MOMENTOS[id].plano ? `Só no plano ${PRECOS[MOMENTOS[id].plano].nome}` : '' }))
   const plano = planoDe(ids)
 
   const pontos = []
@@ -170,17 +171,17 @@ export function planoDoConsultor(entrada = {}) {
   if (r.admin) pontos.push({ id: 'admin', antes: HORAS_ADMIN[r.admin], depois: 'Notas de voz, sem formulários', texto: 'Tarefas administrativas por semana' })
   if (r.leads) pontos.push({ id: 'leads', antes: `${rotulo('leads', r.leads)} por mês`, depois: 'Respondidas e por prioridade', texto: 'Leads novas' })
 
-  /* semanas 2 e 3: primeiro o que a pessoa disse que custa mais, depois o resto do dia */
+  /* dias 4 a 7 e 8 a 12: primeiro o que a pessoa disse que custa mais, depois o resto do dia */
   const porDor = (r.dores || []).map(d => DOR_MOMENTO[d] === 'copiloto' && !ids.includes('copiloto') ? 'voz' : DOR_MOMENTO[d])
   const ordem = [...new Set([...porDor, ...ids.filter(id => id !== 'plano')])].filter(id => ids.includes(id))
   const [primeiro, segundo] = ordem.map(id => MOMENTOS[id])
   const semanas = [
-    { n: 1, titulo: 'Ligar e ensinar', texto: 'Ligas o WhatsApp, as campanhas e o Google Calendar e dás à Clara o teu guião: as perguntas que farias a uma lead.' },
-    { n: 2, titulo: (primeiro || MOMENTOS.plano).titulo, texto: 'Começa pelo que mais te custa. Vês a Clara a trabalhar e afinas com ela o que for preciso.' },
+    { n: 1, quando: 'Dias 1 a 3', titulo: 'Ligar e ensinar', texto: 'Ligas o WhatsApp, as campanhas e o Google Calendar e dás à Clara o teu guião: as perguntas que farias a uma lead.' },
+    { n: 2, quando: 'Dias 4 a 7', titulo: (primeiro || MOMENTOS.plano).titulo, texto: 'Começa pelo que mais te custa. Vês a Clara a trabalhar e afinas com ela o que for preciso.' },
     segundo
-      ? { n: 3, titulo: segundo.titulo, texto: 'Junta-se a segunda frente. A Clara já conhece o teu guião e os teus horários.' }
-      : { n: 3, titulo: 'O dia por ordem, todos os dias', texto: 'Usas as prioridades da manhã todos os dias. A Clara afina o teu guião com as respostas das leads.' },
-    { n: 4, titulo: 'Ver o que mudou', texto: 'Olhas para o primeiro mês com a Clara: as leads que ela respondeu, as que avançaram e o que ficou por fazer. Ainda tens um mês oferecido para decidires se continuas.' },
+      ? { n: 3, quando: 'Dias 8 a 12', titulo: segundo.titulo, texto: 'Junta-se a segunda frente. A Clara já conhece o teu guião e os teus horários.' }
+      : { n: 3, quando: 'Dias 8 a 12', titulo: 'O dia por ordem, todos os dias', texto: 'Usas as prioridades da manhã todos os dias. A Clara afina o teu guião com as respostas das leads.' },
+    { n: 4, quando: 'Dias 13 a 15', titulo: 'Ver o que mudou', texto: 'Olhas para estes 15 dias com a Clara: as leads que ela respondeu, as que avançaram e o que ficou por fazer, e decides se continuas.' },
   ]
 
   const pedidos = (r.dores || []).filter(d => SEM_RESPOSTA[d]).map(d => SEM_RESPOSTA[d])
@@ -194,8 +195,8 @@ export function planoDoConsultor(entrada = {}) {
     plano,
     nomePlano: PRECOS[plano].nome,
     depois: plano === 'clara'
-      ? `O plano Clara cobre o que escolheste, a ${PRECOS.clara.mensal} por mês. Se quiseres a Pro ou a Elite, a primeira mensalidade tem 50% de desconto.`
-      : `A ${PRECOS[plano].nome} cobre o que escolheste. Se continuares, a primeira mensalidade tem 50% de desconto: ${PRECOS[plano].desconto} em vez de ${PRECOS[plano].mensal}.`,
+      ? `O plano Clara cobre o que escolheste, a ${PRECOS.clara.mensal} por mês + IVA.`
+      : `O plano ${PRECOS[plano].nome} cobre tudo o que escolheste, a ${PRECOS[plano].mensal} por mês + IVA. Os 15 dias oferecidos são do plano Clara: o que só existe no ${PRECOS[plano].nome} aparece assinalado no teu dia.`,
   }
 }
 

@@ -200,3 +200,6 @@ img{display:block;max-width:100%}button,input,textarea{font:inherit}button{curso
 /* Plano completo (obrigado) */
 .plan-points{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:14px}.plan-points li{display:grid;gap:3px;border-top:1px solid var(--line);padding-top:12px}.plan-points .with-clara{color:#1F7A44;font-weight:600}
 .plan-day{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:12px}.plan-day li{display:grid;gap:3px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}.plan-day .when{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-dark)}.plan-day span:last-child{color:#505257;font-size:15px}
+.only-in{color:var(--gold-dark);font-size:13px;font-weight:700}
+
+.result-grid--single{grid-template-columns:1fr}
