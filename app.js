@@ -1,9 +1,11 @@
 // As perguntas, o plano e as regras vêm de js/inquerito.js, o mesmo módulo que corre no servidor
 // (netlify/voucher.js), para o email e o ecrã terem o mesmo plano.
-import { PERGUNTAS, planoDoConsultor, limparRespostas } from './js/inquerito.js';
+import { PERGUNTAS, planoDoConsultor, limparRespostas, rotulo } from './js/inquerito.js';
 import { origemDe } from './js/origem.js';
 
 const FORMULARIO = 'inquerito-clara';
+// Webhook GHL (workflow da 4Improvements). Corre em paralelo ao envio para a Netlify e nunca bloqueia o inquérito.
+const WEBHOOK_INQUERITO = 'https://services.leadconnectorhq.com/hooks/edKb7bpIXSA838eQDrMd/webhook-trigger/nD6cJPysZyhBuVKPsA3R';
 const STORAGE_KEY = 'n5_clara_inquerito_v1';
 const RESULT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -147,6 +149,37 @@ function initSurvey() {
       if (!res.ok && local && [404, 405, 501].includes(res.status)) {
         console.warn('Modo local: o formulário não foi enviado (só a Netlify recebe o POST). Segue para a página de obrigado.');
       } else if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Webhook GHL + evento Lead do pixel (o pixel só dispara com marketing aceite, ver pixel.js).
+      const eventId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const respostasLegiveis = {};
+      for (const p of PERGUNTAS) {
+        const v = clean[p.id];
+        if (v === undefined) { respostasLegiveis[p.id] = ''; continue; }
+        respostasLegiveis[p.id] = p.tipo === 'texto' ? v
+          : Array.isArray(v) ? v.map(x => rotulo(p.id, x) || x).join('; ')
+          : (rotulo(p.id, v) || v);
+      }
+      const webhookCtrl = new AbortController();
+      const webhookTimer = setTimeout(() => webhookCtrl.abort(), 5000);
+      await fetch(WEBHOOK_INQUERITO, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: name.value.trim(),
+          email: email.value.trim(),
+          telefone: phone.value.trim(),
+          ...respostasLegiveis,
+          plano_recomendado: planoDoConsultor(clean).nomePlano,
+          consentimento: true,
+          origem: origemDe(location.pathname, location.search),
+          pagina: location.href,
+          event_id: eventId,
+          timestamp: new Date().toISOString(),
+        }),
+        keepalive: true,
+        signal: webhookCtrl.signal,
+      }).catch(e => console.warn('Inquérito: webhook GHL falhou:', e.message)).finally(() => clearTimeout(webhookTimer));
+      window.N5Pixel?.track('Lead', { content_name: 'Inquérito Nº5 Clara' }, { eventID: eventId });
     } catch (err) {
       console.error('Inquérito: o envio falhou:', err.message, '(405/501/404 = o site não está a correr na Netlify; sem erro de rede = falta o formulário detetado)');
       showError('Não conseguimos enviar. Confirma a ligação à internet e tenta outra vez.');
