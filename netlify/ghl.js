@@ -26,21 +26,25 @@ const sem = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== un
 const daOrigem = d => (d.origem ? [etiquetaPagina(d.origem)].filter(Boolean) : [])
 const linhasExtra = d => (d.origem ? [`Página: ${d.origem}`] : [])
 
-export function paraGhl(dados) {
+const CODIGO = /^[A-HJ-NP-Z2-9]{6}$/
+const codigoPassa = d => (CODIGO.test(String(d.codigo || '').toUpperCase()) ? String(d.codigo).toUpperCase() : '')
+
+export function paraGhl(dados, { campoCodigo } = {}) {
   if (!dados?.email) return null
   const r = lerRespostas(dados.respostas)
   const p = planoDoConsultor(r)
+  const passa = codigoPassa(dados)
   const base = {
-    contacto: { ...nomeSeparado(dados.nome), email: dados.email, phone: telefone(dados.telefone), source: `Inquérito ${PRODUTO}` },
+    contacto: { ...nomeSeparado(dados.nome), email: dados.email, phone: telefone(dados.telefone), source: `Inquérito ${PRODUTO}`, ...(passa && campoCodigo ? { customFields: [{ id: campoCodigo, field_value: passa }] } : {}) },
     etiquetas: [ETIQUETA, 'inquerito-clara', 'voucher-clara-15-dias', `plano-${p.plano}`, ...daOrigem(dados)],
-    nota: [`Inquérito da ${PRODUTO}.`, `Voucher: ${dados.voucher || 'por gerar'} (15 dias do plano Clara, um por pessoa, não se junta à pré-reserva).`, `Plano que cobre o que escolheu: ${p.nomePlano}`, '', resumoInquerito(r), ...linhasExtra(dados)].join('\n'),
+    nota: [`Inquérito da ${PRODUTO}.`, `Voucher: ${dados.voucher || 'por gerar'} (15 dias do plano Clara, um por pessoa, não se junta à pré-reserva).`, `Plano que cobre o que escolheu: ${p.nomePlano}`, ...(passa ? [`Código Passa a Clara: ${passa}`] : []), '', resumoInquerito(r), ...linhasExtra(dados)].join('\n'),
   }
   return { ...base, contacto: sem(base.contacto) }
 }
 
 /* cria ou atualiza o contacto pelo email, junta as etiquetas e deixa a nota */
-export async function enviarParaGhl({ dados, token, localizacao, pedir = fetch }) {
-  const r = paraGhl(dados)
+export async function enviarParaGhl({ dados, token, localizacao, pedir = fetch, campoCodigo = typeof process === 'undefined' ? undefined : process.env.GHL_CAMPO_CODIGO }) {
+  const r = paraGhl(dados, { campoCodigo })
   if (!r) return { ok: false, motivo: 'sem-email' }
   const cabecalhos = { Authorization: `Bearer ${token}`, Version: '2021-07-28', 'Content-Type': 'application/json', Accept: 'application/json' }
   const chamar = async (caminho, corpo) => {

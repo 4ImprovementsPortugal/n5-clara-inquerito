@@ -203,3 +203,11 @@ img{display:block;max-width:100%}button,input,textarea{font:inherit}button{curso
 .only-in{color:var(--gold-dark);font-size:13px;font-weight:700}
 
 .result-grid--single{grid-template-columns:1fr}
+
+/* Passa a Clara: ligação pessoal */
+.referral-actions label{display:block;font:700 11px Arial,sans-serif;letter-spacing:.13em;color:var(--gold);margin-bottom:10px}
+.referral-url{color:var(--cream);border:1px solid rgba(245,244,240,.25);background:#15181D;border-radius:9px;padding:12px;overflow-wrap:anywhere;font-size:12px;line-height:1.4}
+.referral-actions .btn{width:100%;margin-top:10px}
+.referral-actions .referral-code{margin:12px 0 0;font-size:14px;color:rgba(245,244,240,.8)}.referral-code strong{font-family:"Courier New",monospace;letter-spacing:3px;color:#F5F4F0;font-size:16px}
+.referral-actions .btn-outline{background:transparent;border:1.5px solid rgba(245,244,240,.6);color:var(--cream);box-shadow:none}.referral-actions .btn-outline:hover{background:#3b4048}
+.referral-panel a{color:var(--gold)}

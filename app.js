@@ -1,11 +1,25 @@
 // As perguntas, o plano e as regras vêm de js/inquerito.js, o mesmo módulo que corre no servidor
 // (netlify/voucher.js), para o email e o ecrã terem o mesmo plano.
-import { PERGUNTAS, planoDoConsultor, limparRespostas, rotulo } from './js/inquerito.js';
+import { PERGUNTAS, planoDoConsultor, limparRespostas } from './js/inquerito.js';
 import { origemDe } from './js/origem.js';
 
 const FORMULARIO = 'inquerito-clara';
-// Webhook GHL (workflow da 4Improvements). Corre em paralelo ao envio para a Netlify e nunca bloqueia o inquérito.
-const WEBHOOK_INQUERITO = 'https://services.leadconnectorhq.com/hooks/edKb7bpIXSA838eQDrMd/webhook-trigger/nD6cJPysZyhBuVKPsA3R';
+// Passa a Clara: cada pessoa tem um código de 6 letras (mesmo formato do site da pré-reserva).
+// A ligação pessoal aponta para esse site, onde as pré-reservas são contadas.
+const SITE_PRE_RESERVA = 'https://assistenteclara.numerocinco.pt';
+const K_MEU = 'n5-passa-codigo';
+const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const FORMATO = /^[A-HJ-NP-Z2-9]{6}$/;
+const lerLS = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const gravarLS = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sem armazenamento */ } };
+const codigoValido = c => FORMATO.test(String(c || '').trim().toUpperCase());
+function meuCodigo() {
+  const c = lerLS(K_MEU);
+  if (codigoValido(c)) return String(c).trim().toUpperCase();
+  const novo = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => ALFABETO[b % 32]).join('');
+  gravarLS(K_MEU, novo);
+  return novo;
+}
 const STORAGE_KEY = 'n5_clara_inquerito_v1';
 const RESULT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -118,6 +132,8 @@ function initSurvey() {
     if (!qs('#privacy').checked) { showError('Precisamos que confirmes a política de privacidade para concluir.'); qs('#privacy').focus(); return; }
 
     const clean = limparRespostas(responses);
+    // id do evento Lead: o mesmo no pixel (navegador) e no webhook do GHL (feito pela função), para não contar duas vezes
+    const eventId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     submitting = true;
     submitButton.disabled = true;
     const originalLabel = submitButton.innerHTML;
@@ -137,7 +153,10 @@ function initSurvey() {
           telefone: phone.value.trim(),
           respostas: JSON.stringify(clean),
           consentimento: true,
+          codigo: meuCodigo(),
           origem: origemDe(location.pathname, location.search),
+          pagina: location.href,
+          event_id: eventId,
           teste: '',
           'empresa-site': qs('#empresa-site').value || '',
         }),
@@ -149,36 +168,7 @@ function initSurvey() {
       if (!res.ok && local && [404, 405, 501].includes(res.status)) {
         console.warn('Modo local: o formulário não foi enviado (só a Netlify recebe o POST). Segue para a página de obrigado.');
       } else if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // Webhook GHL + evento Lead do pixel (o pixel só dispara com marketing aceite, ver pixel.js).
-      const eventId = `lead_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-      const respostasLegiveis = {};
-      for (const p of PERGUNTAS) {
-        const v = clean[p.id];
-        if (v === undefined) { respostasLegiveis[p.id] = ''; continue; }
-        respostasLegiveis[p.id] = p.tipo === 'texto' ? v
-          : Array.isArray(v) ? v.map(x => rotulo(p.id, x) || x).join('; ')
-          : (rotulo(p.id, v) || v);
-      }
-      const webhookCtrl = new AbortController();
-      const webhookTimer = setTimeout(() => webhookCtrl.abort(), 5000);
-      await fetch(WEBHOOK_INQUERITO, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome: name.value.trim(),
-          email: email.value.trim(),
-          telefone: phone.value.trim(),
-          ...respostasLegiveis,
-          plano_recomendado: planoDoConsultor(clean).nomePlano,
-          consentimento: true,
-          origem: origemDe(location.pathname, location.search),
-          pagina: location.href,
-          event_id: eventId,
-          timestamp: new Date().toISOString(),
-        }),
-        keepalive: true,
-        signal: webhookCtrl.signal,
-      }).catch(e => console.warn('Inquérito: webhook GHL falhou:', e.message)).finally(() => clearTimeout(webhookTimer));
+      // Evento Lead do pixel (só dispara com marketing aceite, ver pixel.js). O webhook do GHL é chamado pela função da Netlify.
       window.N5Pixel?.track('Lead', { content_name: 'Inquérito Nº5 Clara' }, { eventID: eventId });
     } catch (err) {
       console.error('Inquérito: o envio falhou:', err.message, '(405/501/404 = o site não está a correr na Netlify; sem erro de rede = falta o formulário detetado)');
@@ -250,6 +240,33 @@ function initThanks() {
   }
   qs('#recommended-plan').textContent = p.nomePlano;
   qs('#recommended-why').textContent = p.depois;
+  initReferral();
+}
+
+// Passa a Clara: mostra a ligação pessoal (o código enviado com o formulário) com copiar e WhatsApp
+function initReferral() {
+  const cod = lerLS(K_MEU);
+  if (!codigoValido(cod)) return;
+  const codigo = String(cod).trim().toUpperCase();
+  const ligacao = `${SITE_PRE_RESERVA}/?ref=${codigo}`;
+  qs('#referral-url').textContent = ligacao;
+  qs('#referral-code').textContent = codigo;
+  qs('#referral-live').hidden = false;
+  qs('#referral-fallback').hidden = true;
+  const copy = qs('#copy-referral');
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(ligacao); copy.textContent = 'Ligação copiada ✓'; }
+    catch {
+      const ta = document.createElement('textarea');
+      ta.value = ligacao; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove();
+      copy.textContent = ok ? 'Ligação copiada ✓' : 'Não foi possível copiar neste navegador';
+    }
+  });
+  qs('#share-whatsapp').addEventListener('click', () => {
+    const msg = 'Conheces a Nº5 Clara? É a assistente comercial dos consultores imobiliários. Se fizeres a pré-reserva pela minha ligação, conta como indicação minha: ' + ligacao;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+  });
 }
 
 function initVideo() {

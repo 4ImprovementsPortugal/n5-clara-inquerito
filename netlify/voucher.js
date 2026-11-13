@@ -28,7 +28,12 @@ const primeiroNome = nome => String(nome || '').trim().split(/\s+/)[0].slice(0, 
 
 /* o email em HTML simples, com estilos na linha, para abrir bem no Gmail e no Outlook.
    O texto livre do inquérito não entra no email: só as escolhas, para o formulário não servir para mandar texto a outros */
-export function emailVoucher({ nome, codigo, respostas, teste = false }) {
+const SITE_PRE_RESERVA = 'https://assistenteclara.numerocinco.pt'
+const CODIGO_PASSA = /^[A-HJ-NP-Z2-9]{6}$/
+
+export function emailVoucher({ nome, codigo, respostas, teste = false, passaCodigo = '' }) {
+  const passa = CODIGO_PASSA.test(String(passaCodigo || '').toUpperCase()) ? String(passaCodigo).toUpperCase() : ''
+  const ligacao = passa ? `${SITE_PRE_RESERVA}/?ref=${passa}` : ''
   const p = planoDoConsultor(respostas)
   const ola = primeiroNome(nome) ? `Olá ${escapar(primeiroNome(nome))},` : 'Olá,'
   const tinta = '#15181D'
@@ -73,6 +78,7 @@ ${p.pedidos.length ? `<tr><td style="padding:8px 28px"><p style="font-size:15px;
   <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.5;color:${cinza}">${CONDICOES.map(c => `<li>${escapar(c)}</li>`).join('')}</ul>
   <p style="font-size:13px;line-height:1.5;color:${cinza};margin:10px 0 0">Termos completos em <a href="https://clara.numerocinco.pt/termos/#voucher" style="color:${tinta}">clara.numerocinco.pt/termos</a>.</p>
 </td></tr>
+${passa ? `<tr><td style="padding:0 28px 20px"><div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${dourado}">Passa a Clara</div><p style="font-size:15px;line-height:1.5;margin:6px 0 8px">Por cada colega que fizer uma pré-reserva paga pela tua ligação, ganhas 1 mês gratuito de Clara Elite, até 6 meses.</p><p style="font-size:14px;line-height:1.5;margin:0;word-break:break-all"><a href="${escapar(ligacao)}" style="color:${tinta}">${escapar(ligacao)}</a><br><span style="color:${cinza}">O teu código: <b style="font-family:'Courier New',monospace;letter-spacing:.12em;color:${tinta}">${escapar(passa)}</b></span></p></td></tr>` : ''}
 <tr><td style="padding:0 28px 28px"><p style="font-size:15px;line-height:1.5;margin:0">Qualquer dúvida, responde a este email.<br>Pedro Ferreira<br><span style="color:${cinza}">N5 Clara</span></p></td></tr>
 </table></td></tr></table></body></html>`
 
@@ -80,8 +86,8 @@ ${p.pedidos.length ? `<tr><td style="padding:8px 28px"><p style="font-size:15px;
 }
 
 /* envia o email pelo GHL ao contacto que o inquérito criou ou atualizou */
-export async function enviarEmailVoucher({ contactId, nome, email, respostas, teste = false, token, pedir = fetch }) {
-  const { assunto, html } = emailVoucher({ nome, codigo: codigoVoucher(email), respostas, teste })
+export async function enviarEmailVoucher({ contactId, nome, email, respostas, teste = false, passaCodigo = '', token, pedir = fetch }) {
+  const { assunto, html } = emailVoucher({ nome, codigo: codigoVoucher(email), respostas, teste, passaCodigo })
   const resp = await pedir(`${API}/conversations/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, Version: '2021-04-15', 'Content-Type': 'application/json', Accept: 'application/json' },

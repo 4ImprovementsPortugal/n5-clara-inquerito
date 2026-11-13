@@ -18,6 +18,7 @@ As perguntas e as regras do plano estão num só ficheiro, **`js/inquerito.js`**
 2. Em **Site configuration > Environment variables**, criar:
    - `GHL_TOKEN`: token do GHL com permissão para contactos, notas, etiquetas e **`conversations/message.write`** (enviar mensagens);
    - `GHL_LOCATION_ID`: id da localização (sub-conta) do GHL.
+   - `GHL_WEBHOOK_INQUERITO`: endereço do webhook de entrada do workflow do GHL (opcional). **Fica só aqui, nunca no código:** leva o id da localização no caminho e a Netlify bloqueia o build se o encontrar num ficheiro.
 3. No GHL, o domínio `numerocinco.pt` tem de estar configurado como domínio de envio (o email sai de `pedro.ferreira@numerocinco.pt`).
 4. Depois do primeiro deploy, confirmar em **Forms** que o formulário `inquerito-clara` aparece e fazer uma resposta de teste com um email vosso.
 
