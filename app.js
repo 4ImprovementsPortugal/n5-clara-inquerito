@@ -25,6 +25,8 @@ const RESULT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const qs = (selector, root = document) => root.querySelector(selector);
+// PostHog (posthog.js): só sai com a escolha de cookies feita; nunca leva dados pessoais nem respostas.
+const marcar = (nome, props) => window.N5Analytics?.track(nome, props);
 const getPage = () => document.body.dataset.page;
 const codificar = obj => Object.entries(obj).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
 
@@ -49,6 +51,7 @@ function initSurvey() {
   function render() {
     showError('');
     const isContact = step === total;
+    marcar(isContact ? 'inquerito_contacto' : 'inquerito_pergunta', isContact ? {} : { pergunta: PERGUNTAS[step].id, n: step + 1 });
     stage.hidden = isContact;
     contactStage.hidden = !isContact;
     nextButton.hidden = isContact;
@@ -169,9 +172,11 @@ function initSurvey() {
         console.warn('Modo local: o formulário não foi enviado (só a Netlify recebe o POST). Segue para a página de obrigado.');
       } else if (!res.ok) throw new Error(`HTTP ${res.status}`);
       // Evento Lead do pixel (só dispara com marketing aceite, ver pixel.js). O webhook do GHL é chamado pela função da Netlify.
+      marcar('inquerito_enviado', { plano: planoDoConsultor(clean).plano });
       window.N5Pixel?.track('Lead', { content_name: 'Inquérito Nº5 Clara' }, { eventID: eventId });
     } catch (err) {
       console.error('Inquérito: o envio falhou:', err.message, '(405/501/404 = o site não está a correr na Netlify; sem erro de rede = falta o formulário detetado)');
+      marcar('inquerito_falhou');
       showError('Não conseguimos enviar. Confirma a ligação à internet e tenta outra vez.');
       submitting = false;
       submitButton.disabled = false;
@@ -204,6 +209,7 @@ function initThanks() {
   }
   if (!result?.answers) { qs('#no-result').hidden = false; return; }
   qs('#has-result').hidden = false;
+  marcar('obrigado_vista');
 
   const p = planoDoConsultor(result.answers);
   const first = (result.firstName || '').slice(0, 80);
@@ -285,6 +291,7 @@ function initVideo() {
   video.addEventListener('volumechange', sync);
   sync();
   soundBtn.addEventListener('click', () => {
+    marcar('video_som_ativado');
     video.muted = false; video.loop = false; video.currentTime = 0; video.play().catch(() => {});
   });
 }

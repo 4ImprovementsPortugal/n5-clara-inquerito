@@ -4,3 +4,23 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# PostHog pelo próprio domínio (posthog.js usa /r): os pedidos ficam neste endereço e a Netlify passa-os ao PostHog da UE,
+# por isso os bloqueadores de anúncios deixam de os cortar. A ordem conta: os ficheiros (static e array) vêm antes do resto.
+[[redirects]]
+  from = "/r/static/*"
+  to = "https://eu-assets.i.posthog.com/static/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/r/array/*"
+  to = "https://eu-assets.i.posthog.com/array/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/r/*"
+  to = "https://eu.i.posthog.com/:splat"
+  status = 200
+  force = true
