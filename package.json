@@ -2,5 +2,8 @@
   "name": "n5-clara-inquerito",
   "private": true,
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^8.2.0"
+  }
 }

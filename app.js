@@ -28,6 +28,14 @@ const qs = (selector, root = document) => root.querySelector(selector);
 // PostHog (posthog.js): só sai com a escolha de cookies feita; nunca leva dados pessoais nem respostas.
 const marcar = (nome, props) => window.N5Analytics?.track(nome, props);
 const getPage = () => document.body.dataset.page;
+// Meta: identificadores do clique e consentimento de marketing, para a API de Conversões (só usados com marketing aceite)
+const marketingAceite = () => { try { return !!window.N5Cookies?.get()?.marketing; } catch { return false; } };
+const lerCookie = n => (document.cookie.match('(?:^|;\\s*)' + n + '=([^;]+)') || [])[1] || '';
+function dadosMeta() {
+  if (!marketingAceite()) return { fbp: '', fbc: '', marketing: '' };
+  const fbclid = new URLSearchParams(location.search).get('fbclid');
+  return { fbp: lerCookie('_fbp'), fbc: lerCookie('_fbc') || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : ''), marketing: '1' };
+}
 const codificar = obj => Object.entries(obj).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
 
 function initSurvey() {
@@ -160,6 +168,7 @@ function initSurvey() {
           origem: origemDe(location.pathname, location.search),
           pagina: location.href,
           event_id: eventId,
+          ...dadosMeta(),
           teste: '',
           'empresa-site': qs('#empresa-site').value || '',
         }),
